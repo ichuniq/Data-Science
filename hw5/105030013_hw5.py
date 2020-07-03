@@ -69,7 +69,7 @@ class DE_optimizer(Function):
         pop = np.asarray([[uniform(self.lower, self.upper) for j in range(self.dim)] for i in range(self.pop_size)])
         # initialize fitness
         fitness = np.asarray([self.f.evaluate(func_num, row) for row in pop])
-        # self.eval_times += self.pop_size
+        self.eval_times += self.pop_size
         best_idx = np.argmin(fitness)
         self.optimal_solution[:] = pop[best_idx]
 
@@ -96,20 +96,21 @@ class DE_optimizer(Function):
                 #------Selection------
                 trial = np.where(cross_points==True, mutant, target)
                 score_trail = self.f.evaluate(func_num, trial)
+                self.eval_times += 1
                 if score_trail == "ReachFunctionLimit":
                     print("ReachFunctionLimit!!!")
-                    return
-                self.eval_times += 1
+                    break
 
                 if (score_trail < fitness[j]):
                     fitness[j] = score_trail
                     pop[j] = trial
-                    if (score_trail < fitness[j]):
+                    if (score_trail < fitness[best_idx]):
                         best_idx = j
                         self.optimal_solution[:] = trial
+                        # for _ in range(self.dim):
+                        #     print("{}\n".format(trial))
 
             self.optimal_value =  fitness[best_idx]
-            # self.optimal_solution[:] = 
             print("optimal: {}".format(self.get_optimal()[1]))
 
 
