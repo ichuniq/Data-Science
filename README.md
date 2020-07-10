@@ -6,7 +6,7 @@ Crawl ETH transactions on blockchain.com
 ### HW2 Mining
 Find frequent patterns using FP-growth
 ### HW3 Classification
-Train model to predict whether it will rain. [Ranked 6/87 in class](https://www.kaggle.com/c/nthuds2020hw3-1/leaderboard)
+[In-class Kaggle contest](https://www.kaggle.com/c/nthuds2020hw3-1/leaderboard), ranked 6/87.
 ### HW4
 Reinforcement learning - DQN, Double DQN
 ### HW5 Optimization
