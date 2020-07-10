@@ -1,57 +1,19 @@
 import numpy as np
 import random
 from random import random, uniform
+import math
 # from random import sample
 # must use python 3.6, 3.7, 3.8(3.8 not for macOS) for sourcedefender
 import sourcedefender
 from HomeworkFramework import Function
 
-
-class RS_optimizer(Function): # need to inherit this class "Function"
-    def __init__(self, target_func):
-        super().__init__(target_func) # must have this init to work normally
-
-        self.lower = self.f.lower(target_func)
-        self.upper = self.f.upper(target_func)
-        self.dim = self.f.dimension(target_func)
-
-        self.target_func = target_func
-
-        self.eval_times = 0
-        self.optimal_value = float("inf")
-        self.optimal_solution = np.empty(self.dim)
-
-    def get_optimal(self):
-        return self.optimal_solution, self.optimal_value
-
-    def run(self, FES): # main part for your implementation
-        
-        while self.eval_times < FES:
-            print('=====================FE=====================')
-            print(self.eval_times)
-
-            solution = np.random.uniform(np.full(self.dim, self.lower), np.full(self.dim, self.upper), self.dim)
-            value = self.f.evaluate(func_num, solution)
-            self.eval_times += 1
-
-            if value == "ReachFunctionLimit":
-                print("ReachFunctionLimit")
-                break            
-            if float(value) < self.optimal_value:
-                self.optimal_solution[:] = solution
-                self.optimal_value = float(value)
-
-            print("optimal: %f\n" % self.get_optimal()[1])
-            
-
 class DE_optimizer(Function):
-    def __init__(self, target_func, pop_size=6):
+    def __init__(self, target_func, pop_size=5):
         super().__init__(target_func)
 
         self.lower = self.f.lower(target_func)
         self.upper = self.f.upper(target_func)
         self.dim = self.f.dimension(target_func)
-
         self.target_func = target_func
 
         self.eval_times = 0
@@ -59,8 +21,9 @@ class DE_optimizer(Function):
         self.optimal_solution = np.empty(self.dim)
         
         self.mut_pool = [1, 1, 0.8, 0.8]
-        self.cr_pool = [0.1, 0.9, 0.2, 0.7]
-        self.pop_size = pop_size
+        self.cr_pool = [0.1, 0.9, 0.2, 0.5]
+        self.pop_size = 4+math.floor(2.5*math.log(self.dim))
+
         # initialize population
         self.pop = np.asarray([[uniform(self.lower, self.upper) for j in range(self.dim)] for i in range(self.pop_size)])
 
@@ -75,6 +38,8 @@ class DE_optimizer(Function):
         mutant = np.clip(mutant, self.lower, self.upper)
         #------Recombination------
         cross_points = np.random.rand(self.dim) < self.cr_pool[id]
+        if np.random.randint(0, self.dim) == j:
+            cross_points[j] = True
         if not np.any(cross_points):
             cross_points[np.random.randint(0, self.dim)] = True
         #------Selection------
@@ -93,6 +58,8 @@ class DE_optimizer(Function):
         cross_points = np.random.rand(self.dim) < self.cr_pool[id]
         if np.random.randint(0, self.dim) == j:
             cross_points[j] = True
+        if not np.any(cross_points):
+            cross_points[np.random.randint(0, self.dim)] = True
         #------Selection------
         trial = np.where(cross_points==True, mutant, self.pop[j])
         score_trail = self.f.evaluate(func_num, trial)
@@ -103,8 +70,7 @@ class DE_optimizer(Function):
         idxs = [idx for idx in range(self.pop_size)]
         #------Mutation------
         a, b, c = self.pop[np.random.choice(idxs, 3, replace = False)]
-        rand_mut = uniform(0,1)
-        mutant = self.pop[j] + rand_mut * ((a - self.pop[j]) + self.mut_pool[id] * (b - c))
+        mutant = self.pop[j] + uniform(0,1) * ((a - self.pop[j]) + self.mut_pool[id] * (b - c))
         mutant = np.clip(mutant, self.lower, self.upper)
         trial = mutant
         score_trail = self.f.evaluate(func_num, trial)
@@ -121,29 +87,17 @@ class DE_optimizer(Function):
         self.optimal_solution[:] = self.pop[best_idx]
 
         while self.eval_times <= FES:
-            #print('=====================FE=====================')
             print("=====eval_times: ", self.eval_times)
             for j in range(self.pop_size):
-            
-                if func_num==2:
-                    rand_i = np.random.randint(3, 4)
-                elif func_num==1:
-                    rand_i = 0
-                elif func_num==3:
-                    rand_i = np.random.choice([0, 2], 1)[0]
-                elif func_num==4:
-                    rand_i = np.random.choice([2], 1)[0]
-                else:
-                    rand_i = np.random.randint(0, 4)
+                rand_i = np.random.randint(0, 4)
+                if func_num==1:
+                    rand_i = 3
+                elif func_num==2:
+                    rand_i = 3
 
-                print("----", rand_i)
                 trial1, score1 = self.rand1bin(j, rand_i, func_num)
                 trial2, score2 = self.rand2bin(j, rand_i, func_num)
-                
-                if func_num!=4:
-                    trial3, score3 = self.cur_to_rand1(j, rand_i, func_num)
-                else:
-                    trial3, score3 = 1000, 1000
+                trial3, score3 = self.cur_to_rand1(j, rand_i, func_num)
                 
                 S = [score1, score2, score3]
                 T = [trial1, trial2, trial3]
@@ -161,16 +115,16 @@ class DE_optimizer(Function):
                 else:
                     score_trial = min(S) 
                     si = S.index(score_trial)
-                    # print("===func {} is used".format(si+1))
                     trial = T[si]
                 
                 if (score_trial < fitness[j]):
                     si = S.index(score_trial)
-                    print("===func {} is used".format(si+1))
+                    # print("===func {} is used".format(si+1))
                     fitness[j] = score_trial
                     self.pop[j] = trial
                     if (score_trial < fitness[best_idx]):
                         best_idx = j
+                        # print("----new optimal: {}".format(score_trial))
 
             self.optimal_value = fitness[best_idx]
             self.optimal_solution[:] = self.pop[best_idx]
@@ -193,15 +147,12 @@ if __name__ == '__main__':
         else:
             fes = 2500
 
-        # you should implement your optimizer
-        # op = RS_optimizer(func_num)
         op = DE_optimizer(func_num)
         op.run(fes)
         
         best_input, best_value = op.get_optimal()
         print(best_input, best_value)
         
-        # change the name of this file to your student_ID and it will output properlly
         with open("{}_function{}.txt".format(__file__.split('_')[0], func_num), 'w+') as f:
             for i in range(op.dim):
                 f.write("{}\n".format(best_input[i]))
