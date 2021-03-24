@@ -12,4 +12,5 @@ Reinforcement learning - DQN, Double DQN
 ### HW5 Optimization
 Differential Evolution, Composite Differential Evolution
 ### HW6 Deep Compression
-Implement Deep Compression, experiment on AlexNet + CIFAR-10
+Implement Deep Compression, experiment on AlexNet + CIFAR-10.  
+Compressed the pretrained model by 142.616x, while losing 1.04% accuracy 
